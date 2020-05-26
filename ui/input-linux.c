@@ -109,9 +109,14 @@ static bool input_linux_check_toggle(InputLinux *il)
         return il->keydown[KEY_LEFTCTRL] &&
             il->keydown[KEY_RIGHTCTRL];
 
+    // case GRAB_TOGGLE_KEYS_ALT_ALT:
+    //     return il->keydown[KEY_LEFTALT] &&
+    //         il->keydown[KEY_RIGHTALT];
+
+    // List of keys: https://github.com/qemu/qemu/blob/master/include/standard-headers/linux/input-event-codes.h
     case GRAB_TOGGLE_KEYS_ALT_ALT:
         return il->keydown[KEY_LEFTALT] &&
-            il->keydown[KEY_RIGHTALT];
+            il->keydown[KEY_TAB];
 
     case GRAB_TOGGLE_KEYS_SHIFT_SHIFT:
         return il->keydown[KEY_LEFTSHIFT] &&
@@ -139,9 +144,11 @@ static bool input_linux_check_toggle(InputLinux *il)
 static bool input_linux_should_skip(InputLinux *il,
                                     struct input_event *event)
 {
-    return (il->grab_toggle == GRAB_TOGGLE_KEYS_SCROLLLOCK ||
+    return ((il->grab_toggle == GRAB_TOGGLE_KEYS_SCROLLLOCK ||
             il->grab_toggle == GRAB_TOGGLE_KEYS_CTRL_SCROLLLOCK) &&
-            event->code == KEY_SCROLLLOCK;
+            event->code == KEY_SCROLLLOCK) ||
+            (il->grab_toggle == GRAB_TOGGLE_KEYS_ALT_ALT &&
+            event->code == KEY_TAB);
 }
 
 static void input_linux_handle_keyboard(InputLinux *il,

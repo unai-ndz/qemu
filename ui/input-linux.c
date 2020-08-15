@@ -49,6 +49,7 @@ struct InputLinux {
     bool        grab_request;
     bool        grab_active;
     bool        grab_all;
+    bool        pass_at_start;
     bool        keydown[KEY_CNT];
     int         keycount;
     int         wheel;
@@ -409,11 +410,13 @@ static void input_linux_complete(UserCreatable *uc, Error **errp)
     }
 
     qemu_set_fd_handler(il->fd, input_linux_event, NULL, il);
-    if (il->keycount) {
-        /* delay grab until all keys are released */
-        il->grab_request = true;
-    } else {
-        input_linux_toggle_grab(il);
+    if (il->pass_at_start) {
+        if (il->keycount) {
+            /* delay grab until all keys are released */
+            il->grab_request = true;
+        } else {
+            input_linux_toggle_grab(il);
+        }
     }
     QTAILQ_INSERT_TAIL(&inputs, il, next);
     il->initialized = true;
@@ -502,6 +505,21 @@ static void input_linux_set_grab_toggle(Object *obj, int value,
     il->grab_toggle = value;
 }
 
+static bool input_linux_get_pass_at_start(Object *obj, Error **errp)
+{
+    InputLinux *il = INPUT_LINUX(obj);
+
+    return il->pass_at_start;
+}
+
+static void input_linux_set_pass_at_start(Object *obj, bool value,
+                                   Error **errp)
+{
+    InputLinux *il = INPUT_LINUX(obj);
+
+    il->pass_at_start = value;
+}
+
 static void input_linux_instance_init(Object *obj)
 {
     object_property_add_str(obj, "evdev",
@@ -517,6 +535,9 @@ static void input_linux_instance_init(Object *obj)
                              &GrabToggleKeys_lookup,
                              input_linux_get_grab_toggle,
                              input_linux_set_grab_toggle);
+    object_property_add_bool(obj, "pass_at_start",
+                             input_linux_get_pass_at_start,
+                             input_linux_set_pass_at_start);
 }
 
 static void input_linux_class_init(ObjectClass *oc, void *data)
